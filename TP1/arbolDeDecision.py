@@ -10,41 +10,37 @@ def obtener_nueva_altura_restante(altura_restante):
         return altura_restante-1
 
 def construir_arbol(instancias, etiquetas, criterion, altura_restante):
-    # ALGORITMO RECURSIVO para construcción de un árbol de decisión binario. 
-    # Suponemos que estamos parados en la raiz del árbol y tenemos que decidir cómo construirlo. 
     ganancia, pregunta = encontrar_mejor_atributo_y_corte(instancias, etiquetas, criterion)
-    
-    # Criterio de corte: ¿Hay ganancia
+   
     if ganancia == 0 or (altura_restante != None and altura_restante <= 0):
-        #  Si no hay ganancia en separar o llegamos a la altura maxima, no separamos. 
+   
         return Hoja(etiquetas)
     else: 
-        # Actualizamos la altura restante
+   
         altura_restante = obtener_nueva_altura_restante(altura_restante)
         
-        # Si hay ganancia en partir el conjunto en 2
+   
         instancias_cumplen, etiquetas_cumplen, instancias_no_cumplen, etiquetas_no_cumplen = partir_segun(pregunta, instancias, etiquetas)
-        # partir devuelve instancias y etiquetas que caen en cada rama (izquierda y derecha)
+   
 
-        # Paso recursivo (consultar con el computador más cercano)
+   
         sub_arbol_izquierdo = construir_arbol(instancias_cumplen, etiquetas_cumplen, criterion, altura_restante)
         sub_arbol_derecho   = construir_arbol(instancias_no_cumplen, etiquetas_no_cumplen, criterion, altura_restante)
-        # los pasos anteriores crean todo lo que necesitemos de sub-árbol izquierdo y sub-árbol derecho
+   
         
-        # sólo falta conectarlos con un nodo de decisión:
+   
         return Nodo_De_Decision(pregunta, sub_arbol_izquierdo, sub_arbol_derecho)
 
-# Definición de la estructura del árbol. 
+
 
 class Hoja:
-    #  Contiene las cuentas para cada clase (en forma de diccionario)
-    #  Por ejemplo, {'Si': 2, 'No': 2}
+    
     def __init__(self, etiquetas):
         self.cuentas = dict(Counter(etiquetas))
 
 
 class Nodo_De_Decision:
-    # Un Nodo de Decisión contiene preguntas y una referencia al sub-árbol izquierdo y al sub-árbol derecho
+    
      
     def __init__(self, pregunta, sub_arbol_izquierdo, sub_arbol_derecho):
         self.pregunta = pregunta
@@ -52,18 +48,18 @@ class Nodo_De_Decision:
         self.sub_arbol_derecho = sub_arbol_derecho
         
         
-# Definición de la clase "Pregunta"
+
 class Pregunta:
     def __init__(self, atributo, valor):
         self.atributo = atributo
         self.valor = valor
     
     def cumple(self, instancia):
-        # Devuelve verdadero si la instancia cumple con la pregunta
+
         return instancia[self.atributo] == self.valor
     
     def __repr__(self):
-        return "¿Es el valor para {} igual a {}?".format(self.atributo, self.valor)
+        return "Es el valor para {} igual a {}?".format(self.atributo, self.valor)
 
 def gini(etiquetas):
     total = len(etiquetas)
@@ -117,7 +113,7 @@ def ganancia_entropia(instancias, etiquetas_rama_izquierda, etiquetas_rama_derec
     return (entropia_inicial - prom_ponderado)
     
 def partir_segun(pregunta, instancias, etiquetas):
-    # Esta función debe separar instancias y etiquetas según si cada instancia cumple o no con la pregunta (ver método 'cumple')
+    
     instancias_cumplen, etiquetas_cumplen, instancias_no_cumplen, etiquetas_no_cumplen = [], [], [], []
     
     for i in range(len(instancias)):
@@ -149,7 +145,7 @@ def encontrar_mejor_atributo_y_corte(instancias, etiquetas, criterion):
     
     for columna in instancias.columns:
         for valor in set(instancias[columna]):
-            # Probando corte para atributo y valor
+            
             pregunta = Pregunta(columna, valor)
             _, etiquetas_rama_izquierda, _, etiquetas_rama_derecha = partir_segun(pregunta, instancias, etiquetas)
    
@@ -175,26 +171,6 @@ def imprimir_arbol(arbol, spacing=""):
     print (spacing + '--> False:')
     imprimir_arbol(arbol.sub_arbol_derecho, spacing + "  ")
 
-# X = pd.DataFrame([["Sol","Calor","Alta","Debil"],
-#                 ["Sol","Calor","Alta","Fuerte"],
-#                 ["Nublado","Calor","Alta","Debil"],
-#                 ["Lluvia","Templado","Alta","Debil"],
-#                 ["Lluvia","Frio","Normal","Debil"],
-#                 ["Lluvia","Frio","Normal","Fuerte"],
-#                 ["Nublado","Frio","Normal","Fuerte"],
-#                 ["Sol","Templado","Alta","Debil"],
-#                 ["Sol","Frio","Normal","Debil"],
-#                 ["Lluvia","Templado","Normal","Debil"],
-#                 ["Sol","Templado","Normal","Fuerte"],
-#                 ["Nublado","Templado","Alta","Fuerte"],
-#                 ["Nublado","Calor","Normal","Debil"],
-#                 ["Lluvia","Templado","Alta","Fuerte"]],
-#                 columns = ['Cielo', 'Temperatura', 'Humedad', 'Viento'])
-
-# y = ['No', 'No', 'Si', 'Si', 'Si', 'No', 'Si', 'No', 'Si', 'Si', 'Si', 'Si', 'Si', 'No']
-
-# display(X)
-# display(y)
 
 def predecir(arbol, x_t):
     nodo_actual = arbol
@@ -205,7 +181,6 @@ def predecir(arbol, x_t):
         else:
             nodo_actual = nodo_actual.sub_arbol_derecho
     
-    #Tenemos solamente un valor por hoja
     return next(iter(nodo_actual.cuentas.keys()))
         
 class MiClasificadorArbol():
@@ -225,7 +200,7 @@ class MiClasificadorArbol():
         for x_t in X_test:
             x_t_df = pd.DataFrame([x_t], columns=self.columnas).iloc[0]
             prediction = predecir(self.arbol, x_t_df)
-            print(x_t, "predicción ->", prediction)
+            print(x_t, "prediccion ->", prediction)
             predictions.append(prediction)
         return predictions
     
@@ -235,9 +210,3 @@ class MiClasificadorArbol():
         accuracy = sum(y_i == y_j for (y_i, y_j) in zip(y_pred, y_test)) / len(y_test)
         return accuracy
         
-# # Ejemplo de uso
-# clf = MiClasificadorArbol()
-# display(np.array(X))
-# # Tomar en cuenta que sklearn espera numpy arrays:
-# clf.fit(np.array(X), y)
-# clf.score(np.array(X), y)
