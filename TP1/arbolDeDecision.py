@@ -19,18 +19,12 @@ def construir_arbol(instancias, etiquetas, criterion, altura_restante):
    
         altura_restante = obtener_nueva_altura_restante(altura_restante)
         
-   
         instancias_cumplen, etiquetas_cumplen, instancias_no_cumplen, etiquetas_no_cumplen = partir_segun(pregunta, instancias, etiquetas)
-   
-
    
         sub_arbol_izquierdo = construir_arbol(instancias_cumplen, etiquetas_cumplen, criterion, altura_restante)
         sub_arbol_derecho   = construir_arbol(instancias_no_cumplen, etiquetas_no_cumplen, criterion, altura_restante)
    
-        
-   
         return Nodo_De_Decision(pregunta, sub_arbol_izquierdo, sub_arbol_derecho)
-
 
 
 class Hoja:
@@ -41,7 +35,6 @@ class Hoja:
 
 class Nodo_De_Decision:
     
-     
     def __init__(self, pregunta, sub_arbol_izquierdo, sub_arbol_derecho):
         self.pregunta = pregunta
         self.sub_arbol_izquierdo = sub_arbol_izquierdo
@@ -55,8 +48,7 @@ class Pregunta:
         self.valor = valor
     
     def cumple(self, instancia):
-
-        return instancia[self.atributo] == self.valor
+        return instancia[self.atributo] >= self.valor
     
     def __repr__(self):
         return "Es el valor para {} igual a {}?".format(self.atributo, self.valor)
