@@ -3,27 +3,35 @@ import pandas as pd
 
 from collections import Counter
 
+POSITIVE_CLASS = 1
+NEGATIVE_CLASS = 0
+
 def obtener_nueva_altura_restante(altura_restante):
     if (altura_restante == None):
         return None
     else:
         return altura_restante-1
 
-def construir_arbol(instancias, etiquetas, criterion, altura_restante):
-    ganancia, pregunta = encontrar_mejor_atributo_y_corte(instancias, etiquetas, criterion)
+def construir_arbol(instancias, etiquetas, columnas, criterion, altura_restante):
+    # Finds the attribute that best separates the data at this point.
+    ganancia, pregunta = encontrar_mejor_atributo_y_corte(instancias, etiquetas, columnas, criterion)
    
+    # Checks if theres no gain or if theres no remaining heigh
     if ganancia == 0 or (altura_restante != None and altura_restante <= 0):
-   
         return Hoja(etiquetas)
     else: 
    
+        # Updates remainig height
         altura_restante = obtener_nueva_altura_restante(altura_restante)
         
+        # Separates current instances according to the previosly found attribute
         instancias_cumplen, etiquetas_cumplen, instancias_no_cumplen, etiquetas_no_cumplen = partir_segun(pregunta, instancias, etiquetas)
    
-        sub_arbol_izquierdo = construir_arbol(instancias_cumplen, etiquetas_cumplen, criterion, altura_restante)
-        sub_arbol_derecho   = construir_arbol(instancias_no_cumplen, etiquetas_no_cumplen, criterion, altura_restante)
+        # Continues construction recursvely with remaining instances.
+        sub_arbol_izquierdo = construir_arbol(instancias_cumplen, etiquetas_cumplen, columnas, criterion, altura_restante)
+        sub_arbol_derecho   = construir_arbol(instancias_no_cumplen, etiquetas_no_cumplen, columnas, criterion, altura_restante)
    
+        # Connects everithing in a decision node.
         return Nodo_De_Decision(pregunta, sub_arbol_izquierdo, sub_arbol_derecho)
 
 
@@ -55,12 +63,12 @@ class Pregunta:
 
 def gini(etiquetas):
     total = len(etiquetas)
-    
+
     if (total == 0):
         return 1
     
-    positivas = len([i for i in etiquetas if i == 'Si'])
-    negativas = len([i for i in etiquetas if i == 'No'])
+    positivas = len([i for i in etiquetas if i == POSITIVE_CLASS])
+    negativas = len([i for i in etiquetas if i == NEGATIVE_CLASS])
     
     impureza = 1 - np.square(positivas / total) - np.square(negativas / total)
 
@@ -84,8 +92,8 @@ def entropia(etiquetas):
         return 1
     
     muestras_clases = [
-        len([i for i in etiquetas if i == 'Si']) / total,
-        len([i for i in etiquetas if i == 'No']) / total
+        len([i for i in etiquetas if i == POSITIVE_CLASS]) / total,
+        len([i for i in etiquetas if i == NEGATIVE_CLASS]) / total
     ]
     
     for clase in muestras_clases:
@@ -110,7 +118,7 @@ def partir_segun(pregunta, instancias, etiquetas):
     
     for i in range(len(instancias)):
         etiqueta  = etiquetas[i]
-        instancia = instancias.iloc[i]
+        instancia = instancias[i]
         
         if (pregunta.cumple(instancia)):
             instancias_cumplen.append(instancia)
@@ -121,7 +129,7 @@ def partir_segun(pregunta, instancias, etiquetas):
             
             
     
-    return pd.DataFrame(instancias_cumplen), etiquetas_cumplen, pd.DataFrame(instancias_no_cumplen), etiquetas_no_cumplen    
+    return instancias_cumplen, etiquetas_cumplen, instancias_no_cumplen, etiquetas_no_cumplen    
 
 def obtener_ganancia(instancias, etiquetas_rama_izquierda, etiquetas_rama_derecha, criterion):
     if (criterion == 'gini'):
@@ -131,18 +139,17 @@ def obtener_ganancia(instancias, etiquetas_rama_izquierda, etiquetas_rama_derech
     else:
         raise ValueError('bad criterion configured | %f not valid'.format(str(criterion)))
 
-def encontrar_mejor_atributo_y_corte(instancias, etiquetas, criterion):
+def encontrar_mejor_atributo_y_corte(instancias, etiquetas, columnas, criterion):
     max_ganancia   = 0
     mejor_pregunta = None
-    
-    for columna in instancias.columns:
-        for valor in set(instancias[columna]):
-            
-            pregunta = Pregunta(columna, valor)
+
+    for columna in columnas:
+        for instancia in instancias:
+
+            pregunta = Pregunta(columna, instancia[columna])
             _, etiquetas_rama_izquierda, _, etiquetas_rama_derecha = partir_segun(pregunta, instancias, etiquetas)
-   
             ganancia = obtener_ganancia(instancias, etiquetas_rama_izquierda, etiquetas_rama_derecha, criterion)
-            
+
             if ganancia > max_ganancia:
                 max_ganancia = ganancia
                 mejor_pregunta = pregunta
@@ -173,32 +180,50 @@ def predecir(arbol, x_t):
         else:
             nodo_actual = nodo_actual.sub_arbol_derecho
     
-    return next(iter(nodo_actual.cuentas.keys()))
+    return nodo_actual.cuentas
         
+def get_probas(prediction):
+    tot    = 0
+    probas = [0, 0]
+
+    for k in prediction:
+        tot = tot + prediction[k]
+
+    for k in prediction:
+        probas[k] = prediction[k] / tot
+
+    return probas
+
 class MiClasificadorArbol():
     def __init__(self, max_depth='3', criterion='gini'):
         self.arbol     = None
-        self.columnas  = []
+        self.columnas  = {}
         self.max_depth = max_depth
         self.criterion = criterion
     
     def fit(self, X_train, y_train):
         self.columnas = range(len(X_train[0]))
-        self.arbol    = construir_arbol(pd.DataFrame(X_train, columns=self.columnas), y_train, self.criterion, self.max_depth)
+        self.arbol    = construir_arbol(X_train, y_train, self.columnas, self.criterion, self.max_depth)
         return self
     
+    # Predicts the label of each x_i
     def predict(self, X_test):
         predictions = []
         for x_t in X_test:
-            x_t_df = pd.DataFrame([x_t], columns=self.columnas).iloc[0]
-            prediction = predecir(self.arbol, x_t_df)
-            print(x_t, "prediccion ->", prediction)
+            prediction = next(iter(predecir(self.arbol, x_t).keys()))
+            #print(x_t, "prediccion ->", prediction)
             predictions.append(prediction)
         return predictions
-    
+
+    # Predicts the probability of each class
+    def predict_proba(self, X_test):
+        predictions = []
+        for x_t in X_test:
+            prediction = predecir(self.arbol, x_t)
+            predictions.append( get_probas(prediction) )
+        return predictions    
+
     def score(self, X_test, y_test):
         y_pred = self.predict(X_test)
-        
         accuracy = sum(y_i == y_j for (y_i, y_j) in zip(y_pred, y_test)) / len(y_test)
         return accuracy
-        
