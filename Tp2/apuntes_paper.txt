@@ -1,0 +1,73 @@
+A Review on Milti-Label Learning Algorithms
+
++ Intro:
+	- Representacion: Un objeto del mundo real -> vector de feactures + etiqueta asociada.
+
+	- Asuncion: Cada muestra pertenece a un solo un concepto (tiene sentido semantico unico).
+
+	- Representacion nueva: Un conjunto de labels para cada instancia.
+
++ El paradigma
+	+ parte 1
+		* Defs: 
+			- Y conj de etiquetas posibles
+			- X conj de nstancias
+				- x_i vector de features
+			- D set de entramiento donde cada elem tiene la forma:
+				- (x_i, Y_i)
+					x_i idem antes
+					Y_i Subconjunto de Y
+		* Objetivo:
+			- enontrar h : X -> 2^Y del set de entrenamiento D.
+				- Para un nuevo x dado h(x) devuelve un subconjunto de Y.
+				- Por lo general devuleve la 'confianza' de que cada label pertenezca a la solucion.
+
+		* Caracterizacion: Indicadores multi-label
+			- cardinalidad de label: el promedio de etiquetas por sample
+			- Densidad de labels: cardinalidad / |Y|
+				- Normaliza la cardinalidad.
+			- Diversidad de labels: la cantidad de labels distintos de Y que aparecen en D.
+				- Obs: tambien se puede normalizar con |D|.
+
+		* threshold:
+			- Se puede definir una t : X -> R tal que separe el espacio de labels en dos (relevantes y no relevantes).
+
+		* Como contrarrestar el rapido crecimiento de los conjuntos de etiquetas
+			- Uso de correlacion entre los datos, 3 tecnicas:
+
+				1) Estrategia de primer orden: Etiquetar de a una a la vez. suboptimo por no tener en cuenta la correlacion entre labels.
+			
+				2) Estrategia de segundo orden: chequeo de a pares de etiquetas. Tales como rankings entre etiquetas relevantes y no-relevantes / interaccion entre cualquier par de etquetas.
+			
+				3) Estrategia de Alto Orden: considerancio relaciones de alto orden entre etiquetas. Ejemlpos: ver como una etiqueta se impone sobre todas las otras o ver conecciones entre subconjuntos aleatorios de etiquetas.
+
+		* Estrategias de busqueda de threshhold t()
+			- funcion constante (0 o 0.5)
+			- funcion inducida del set de datos
+				- Se puede reducir el problema a resolver un sistema de cuadrados minimos (Ver fin de pg 3)
+	+ parte 2:
+		+ Metricas de evaluacion
+			- Defs:
+				- S = {(x_i, y_i) | 1 <= i <= p} es el set de prueba
+				- h(.) el clasificador de multiples etiquetas entrenado
+
+			- 2 tipos:
+				- Example-based metrics: Evalua la performance en cada sample de prueba y devuelve el promedio
+				- Label-based metrics: Evalua la performance del sistema de aprendizaje para cada clase de label por separado y devuleve el algun valor promediado entre todas las clases de etiquetas.
+
+			- Example-Based: Ver pagina 4
+				- subset acurracy | hamming loss | accuracy | precision | fecall | FB
+				- Ademas si se tiene la funcion f(.,.) disponible se pueden sacar metricas de rankeo. (Ver principio de pagina 5)
+
+			- Label-Based: Ver pagina 5 / 6
+
++ Algoritmos de Aprendizaje
+	- Categorizacion simple (8 algoritmos), 2 categorias:
+		
+		1) Transformacion de problemas: Llevan el problema de tener multiples etiquetas a otros escenarios ya conocidos. (fitear los datos al algoritmo)
+
+		2) Adaptacion de algoritmos: Adapta tecnicas populares de aprendizaje para tratar con datos con muchas etiquetas directamente. (fitear el algoritmo a los datos)
+
+	* Transformaciond e problemas:
+		1) Relevancia Binaria: descomponer el problema en "q problemas de clasificacino independientes" (c/problema de clasificacion binaria corresponde a una posible etiqueta).
+			- TODO: Seguir leyendo

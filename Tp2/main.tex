@@ -1,0 +1,225 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[margin=1in]{geometry}
+
+
+\title{Aprendizaje Automatico TP2: Paper Nro. 2 - Multi-label Learning Algorithms}
+\author{ Lebrero, Ignacio | Alejandro, Gonzalez | Mauro, Cherubini }
+\date{Diciembre 2018}
+
+\begin{document}
+\normalsize
+
+\maketitle
+
+\section{Introducción}
+    Los algoritmos de clasificacion tal cual los venimos viendo en la materia consideran la hipotesis de que cada objeto del mundo real corresponde a un solo concepto (al que representamos como una clase). Esto no necesariamente es verdad, cosas como \textit{que idiomas habla, que nacionalidades tiene o cuales ingredientes lo conforman} son ejemplos de clasificadores que no encajan del todo bien con esta hipotesis, pues corresponden no solo a uno, si no a un conjunto de coneceptos. De esto se desprende la consideración de problemas y datasets $multi$-$label$, al cual cada instacia $x_i$ le corresponde un conjunto de etiquetas $Y_i$. 
+    
+    %\subsection{Definiciones y bases}
+        %Para formalizar un poco m\'as esta idea definimos $Y$ como el conjunto de etiquetas posibles (clases a predecir), $X$ el conjunto de instancias. Esto es $x_i \in X$ es el vector de features de la $i-esima$ instancia. $D$ el set de entrenamiento donde $d_i \in D$ es de la forma $(x_i, y_i)$ con $y_i \subseteq Y$ y $x_i$ la definida previamente. Es importante notar que hasta el momento solamente cambiamos la definicion de $y_i$ de $\in a \subseteq$.
+        
+        %Por otro lado ,al igual que en los clasificadores que venimos viendo, queremos encontrar la funci\'on objetivo $h : X \to 2^{Y}$. Podemos ver que en lugar de devolver una etiqueta en particular, devolvermos un elemento del conjunto de particiones de posibles combinaciones de $Y$.
+        %Puede llegar  a ir, ver despues
+        %\subsubsection{Caracterizando indicadores}
+        
+        %Finalmente, para diferenciar que etiquetas seran seleccionadas y cuales no, definimos una funcion de threshhold $t : X \to \real \mathbb{R}$. Esta dividira las etiquetas entre \textit{relevantes} y \textit{no relevantes}.
+        
+        %Cosas que quedan afuera por ahora
+        %\subsubsection{Contrarestar el rapido crecimiento del conjunto de etiquetas}
+        %\subsubsection{Estrategias de busqueda de threshhold}
+        
+    \section{Metricas de Evaluacion}
+    A la hora de estimar el $score$ de un clasificador multi-label existen muchas metricas posibles en las que nos podemos basar, a continuación expondremos algunas a modo de ejemplo. 
+    
+    Antes que nada definiremos un poco de notación que será necesaria para las subsiguientes definiciones. Notamos a [[.]] como la operación que toma un predicado y devuelve 1 si este se cumple, y 0 en caso contrario. Y notamos a $\Delta$ como la diferencia simetrica entre dos conjuntos. 
+    
+    Sea $h$ un clasificador multi-label, $S = \{(x_i, Y_i)$ $|$ $1\leq i\leq p\}$ el conjunto de validación, y $q$ la cantidad de etiquetas existentes, podemos definir como posibles metricas, entre otras:\\
+    
+    \hspace{24.0} $subsetacc(h) = \frac{1}{p}{\sum}^{p}_{i=1}$ [[$h(x_i)=Y_i$]] \hspace{24.0} $hloss(h) = \frac{1}{p}{\sum}^{p}_{i=1} \frac{1}{q}$ $|h(x_i)\Delta Y_i|$$
+        %\subsection{Defniciones}
+        %\subsection{Example-Based metrics}
+        
+    %\section{Algoritmos de aprendizaje}
+        %A continuacion veremos dos categorias de algoritmos
+        
+        %\begin{itemize}
+            %\item \textbf{Transformacion de problemas:} Llevan el problema de tener multiples etiquetas a otros escenarios conocidos. La idea es fitear los datos al algoritmo.
+            %\item \textbf{Adaptacion de algoritmos:} Adaptan tecnicas populares de aprendizaje para tratar con datos de muchas etiquetas, La idea es fitear el algoritmo a los datos.
+        %\end{itemize}
+        
+        \section{M\'etodos de transformaci\'on de problemas}
+        
+        En este enfoque la idea es llevar el problema de tener multiples etiquetas a otros escenarios conocidos en donde sea mas fácil tratarlos, por lo que el foco de estudio se encuentra en hallar metodos prácticos que permitan lograr esto de manera eficiente.
+        
+        \subsubsection{Relevancia binaria}
+        La idea basica del algoritmo es descomponer el problema de aprendizaje multiclase en $q$ problemas de clasificacion binaria independientes (Cada problema de clasificacion corresponde a una posible etiqueta en el espacio de la etiqueta). Para cada $y_j$ (etiqueta de la $j$-$clase$) primero se construye el correspondiente conjunto de entrenamiento binario considerando la relevancia de cada ejemplo de entrenamiento como: \\ \\
+        $D_j$ = $\{ (x_j, \phi (Y_j,y_j))$
+        $| 1\leq i \leq m \}$    
+        \hspace{6.0} donde \hspace{6.0} $\phi (Y,y)$ = $\[   \left\{ \begin{array}{ll}+1 &  y \in Y \\-1 & $caso contrario \\ \end{array} \right. \]$ \\ \\$
+        Dado esto por medio de algún algoritmo de clasificacion binaria generamos $q$ clasificadores binarios $g_{j} (.)$, con $1\leq j\leq q$. Luego para poder predecir la clase Y correspondiente a una nueva instancia x no vista, combinamos los $q$ clasficadores para predecir en función de la relevancia predicha si la etiqueta correspondiente debería formar parte del conjunto Y predicho, formalmente lo expresamos como Y = $\{y_i | g_j(x)> 0,$ $1 \leq j \leq q\}$
+        De acuerdo a esta definici\'on si todos los clasificadores nos dan una respuesta negativa el conjunto predicho Y resulta ser el conjunto vacio. Para evitar esta indeseada consecuencia utilizamos la regla conocida como $T-Criterion$ de manera de complementar con las etiquetas de mayor relavancia, con lo cual formalmente definimos al Y predicho como Y = $\{y_i | g_j(x)> 0,$ $1 \leq j \leq q\}$ $\cup$ $\{y_{k}|$ k = $argmax_{1\leq k \leq q}$ $g_k(x) \}$
+       
+        \subsubsection{Cadenas de clasificador}
+        La idea detras de este algoritmo es transformar el problema de aprendisaje multinivel en una cadena de problemas de clasificacion binaria, donde la subsecuencia de clasificadores binarios en la cadena se basan en las predicciones de los anteriores. \\
+        Para las $q$ posibles clases de etiquetas $\{y_1,y_2,...,y_q\}$, se define una funci\'on de permutación $\tau$: $\{1..q\}$ $\rightarrow$ $\{1..q\}$ que se usa para especificar un orden ($y_{\tau(1)} \succ y_{\tau(2)} \succ .. \succ y_{\tau(q)}$). En base a esta función definimos un $dataset$ asociado a cada valor asignado $\tau(j)$ para $1\leq j \leq q$.\\ \\
+        $D_{\tau(j)}$ = $\{$ ($[x_i, {pre^i}_{\tau(j)}]$ ,$\phi(Y_i,y_{\tau(j)})) | i \leq i \leq m\}$ \hspace{6.0} donde \hspace{6.0} ${pre^i}_{\tau(j)}$ = ($\phi (Y_i,y_{\tau(1)}),..,\phi (Y_i,y_{\tau(j-1)}))^T$ \\
+        
+        Luego en base a algún algoritmo de aprendizaje binario $B$ inducimos un clasificador binario $g_{\tau(j)}:X x \{-1, +1\}^{j-1} \to  \mathbb{R}$ de la forma $B(D_{jk}) \to g_{jk}$, que determina la relevancia de $y_{\tau(j)}$.
+        
+        Para instancias $x$ aún no vistas, su conjunto de etiquetas predichas estará definido como $Y = \{ y_{\tau(j)} | {\lambda^{x}}_{\tau(j)} = +1$, $1\leq j \leq q \}$, donde definimos a los $\lambda^{x}}_{\tau(j)} \in \{-1, +1\}$, que representan la relevancia binaria de $y_{\tau(j)$ en $x$, como:
+        
+        $\lambda^{x}}_{\tau(1)} = sign[g_{\tau(1)}(x)]$ \\
+        
+        $\lambda^{x}}_{\tau(j)} = sign[g_{\tau(j)}([x, \lambda^{x}}_{\tau(1)},....,\lambda^{x}}_{\tau(j-1)}])]$ \hspace{6.0} $(1\leq j \leq q)$
+        
+        %Para las instancias aun no vistas de X, se utilizan los $\frac{q(q-1)}{2}$ clasificadores binarios de entrenamiento, para obtener una votación general de cada posible etiqueta que se le va a asignar. $pre_{\tau(j)^i}$, representa la asignaci\'on binariade las etiquetas predichas de $y_{\tau(j)}$ sobre $x_i$. Luego con la ayuda de algun algoritmo de aprendisaje binario, se determina si $y_{\tau(j)}$ es una etiqueta relevante o no. 
+        
+        %Quedo afuera por poco espacio 
+        %\subsubsection{Calibrated Lable Ranking}
+        %La idea basica de este algoritmo es transformar el problema de \textit{multi-label learning} en uno de \textit{label ranking}, en donde el ranking de los labels esta dado por tecnicas de comparaci\'on de a pares. Para ello para cada par $(y_j, y_i)$ construimos un dataset $D_{jk}$ que incluye solo aquellas instancias con relevancia distinta a $y_j$ e $y_k$, al que definimos formalmanete como:\\
+        
+        %$D_{jk} = \{ (x_i, \psi(Y_i, y_j, y_k)) | \phi(Y_i, y_j) \not= \phi(Y_i, y_k), 1 \leq i \leq m\}$ \\
+        
+        %$\psi(Y_i, y_j, y_k)$ =
+         %           \begin{cases}
+          %              \text{$+1$} \quad\text{if $\phi(Y_i, y_j) = +1$ \land $\phi(Y_i, y_k) = -1$}\\
+          %               \text{$-1$} \quad\text{if $\phi(Y_i, y_j) = -1$ \land $\phi(Y_i, y_k) = +1$}
+          %          \end{cases} \hspace{16.0}
+    %    $\phi(Y, y)$ =
+     %               \begin{cases}
+     %                   \text{$+1$} \quad\text{if $y \in Y$}\\
+     %                    \text{$-1$} \quad\text{otherwise}
+     %               \end{cases}\\
+                    
+        
+        
+        
+        %Esta t\'ecnica consiste de dos partes:
+        % La idea basica de este algoritmo es transformar el problema de \textbf{multi-label learning} en uno de \textit{label ranking}, en donde el ranking de los labels esta dado por tecnicas de comparaci\'on de a pares. Esta t\'ecnica consiste de dos partes:
+        
+        % \begin{itemize}
+        %     \item Construir datasets alternativos derivados del que fue dado como entrada. Cada uno basado en la relaci\'on entre dos etiquetas posibles.
+        %     \item En base a lo anterior inducir un clasificador binario por cada dataset creado.
+        % \end{itemize}, 
+        
+        % En primer lugar, para cada par $(y_j, y_k)$, consieramos la \textit{relevancia relativa} de cada $x_i$ para $y_j$ y $y_k$. Definimos:
+        
+        % \centerline{
+        %     $D_{jk} = \{ (x_i, \psi(Y_i, y_j, y_k)) | \phi(Y_i, y_j) \not= \phi(Y_i, y_k), 1 \leq i \leq m\}$
+        % }
+        
+        % Esto toma solo toma los pares de etiquetas cuya relevancia difiere contra la entrada de entrenamiento.
+        
+        % %TODO: Arreglar el case de aca
+        % Y definimos:
+        % \begin{center}
+        %         $\psi(Y_i, y_j, y_k)$ =
+        %             \begin{cases}
+        %                 \text{$+1$} \quad\text{if $\phi(Y_i, y_j) = +1$ and $\phi(Y_i, y_k) = -1$}\\
+        %                 \text{$-1$} \quad\text{if $\phi(Y_i, y_j) = -1$ and $\phi(Y_i, y_k) = +1$}
+        %             \end{cases}
+        % \end{center}
+        
+        % Luego en base a algún algoritmo de aprendizaje binario $B$ inducimos un clasificador binario $g_{jk}:X \to  \mathbb{R}$ de la forma $B(D_{jk}) \to g_{jk}$.
+        
+        %Esto deja en $D_{jk}$ solo instancias con relevancia distinta a $y_j$ e $y_k$. Luego en base a algún algoritmo de aprendizaje binario $B$, inducimos un clasificador binario de la forma: $g_{jk}:X \to  \mathbb{R}$, esto se da de la forma $B(D_{jk}) \to g_{jk}$.
+        
+        % En resumen, lo que hicimos fue, para cada instancia $x_i$ generamos un clasificador por cada par $(y_j, y_k)$ que clasificara $y_j$ si $g_{jk}(x) > 0$ o $y_k$ en caso contrario. Con esto para clasificar algun $x$ nuevo, basta con, para cada etiqueta posible, correr todos sus clasificadores y en base al valor dado, votar para tomarla como etiqueta relevante o no.
+        
+        % Lo ultimo que necesitamos es algun \textit{threshold} para decidir cuando votar si una etiqueta es relevante. Para esto incorporamos una \textbf{etiqueta virtual} $y_v$ en cada entrada de entrenamiento. Esta sirve de punto artificial para discernir si otra etiqueta es relevante o no. Esto es, $y_v$ sera rankeada como menor a las relevantes y mayor a las no relevantes. 
+
+        \subsubsection{Random k-Labelsets}
+        % La idea general detras de este algoritmo es generar un ensamble de $n$ clasificadores multiclase basados en $n$ subconjuntos de longitud $k$ elegidos aleatoriamente del conjunto de etiquetas Y.
+        
+        % Para esto primero introduciremos la técnica de Label Powerset (LP) en la que se inspira el algoritmo. Esta técnica consiste en transformar nuestro problema en el cual consideramos para cada $x_i$ del conjunto de entrenamiento un conjunto de etiquetas $Y_i$ asociado, a un problema de clasificación multiclase simple, en donde a cada $x_i$ se lo asocia con un $n_i \in \mathbb{N}$. Para esto seleccionamos una función inyectiva $\sigma_Y : 2^Y \rightarrow \mathbb{N}$ que mapea subconjuntos de Y a numeros naturales, y definimos nuestro nuevo conjunto de entrenamiento (al que llameremos ${D^\dagger}_Y$) como:\\
+        
+        % ${D^\dagger}_Y = \{ (x_i,\sigma_Y(Y_i)) | 1\leq i\leq m \}$\\
+        
+        % Donde además el nuevo conjunto de clases será $\Gamma ({D^\dagger}_Y) = \{ \sigma_Y(Y_i) | 1\leq i\leq m \}$\\
+        
+        % En base a este nuevo conjunto de entrenamiento y a partir de algún algoritmo de aprendizaje multi clase $M$ obtenemos una función ${g^\dagge}_Y : X \rightarrow \Gamma ({D^\dagger}_Y)$ que asigna a cada instancia $x$ una etiqueta ${g^\dagge}_Y (x)$. Luego con esta etiqueta resolvemos su conjunto de etiquetas asociado en el conjunto de entrenamiento orignal, como Y = ${\sigma_Y}^{-1} ( {g^\dagger}_Y (x) )$, donde ${\sigma_Y}^{-1} (.)$ es la inversa de $\sigma_Y (.)$.
+        
+        % Por desgracia esta técnica tiene dos grandes limitaciones, en primer lugar el presenta serias complicaciones a la hora de generalizar para conjuntos de instancias por fuera de las de entrenamiento. Esto se debe a que el conjunto de clases $\Gamma ({D^\dagger}_Y})$ se deriva no solo de las etiquetas presentes en el conjunto de entrenamiento (como ocurre en otras técnicas), si no que también depende de como ellas esten agrupadas en Y; es decir que el nuevo modelo no generaliza bien incluso con instancias $x_i$ donde las etiquetas de $Y_i$ asociado estas presentes por separado en los $Y_j$ del conjunto de entrenamiento original, pero no todas en un mismo conjunto.
+        
+        % En segundo lugar también esta presente el inconveniente de que a medida que crece la cantidad de etiquetas distintas y el tamaño del conjunto de entrenamiento, la cantidad de clases $\Gamma ({D_Y}^\dagger)$ aumenta exponencialmente, haciendo que el coste de entrenar ${g^\dagger}_Y} (.)$ sea excesivo.\\
+        
+        % Inspirado en LP el algoritmo de Random k-Labelsets viene entonces a simplificar estas complicaciones. Sea $Y^{k}$ el conjunto de subconjuntos de tamaño $k$ de $Y$, la idea es elegir de manera aleatoria $n$ subconjuntos $Y^{k} (l) \in Y^{k}$ con $1\leq l\leq n \leq \binom{q}{k}$, donde $q = |Y|$. Luego a partir de esta selección generar $n$ conjuntos de entrenamiento distintos asociados cada uno a un $Y^{k} (l)$, y utilizar a estos últimos como base para generar un ensamble de $n$ componentes. Cada uno de estos nuevos conjuntos de entrenamiento se los define formalmente como:\\
+        
+        Esta técnica consiste en transformar nuestro problema en el cual consideramos para cada $x_i$ del conjunto de entrenamiento un conjunto de etiquetas $Y_i$ asociado; a un problema de clasificación multi-clase simple, en donde a cada $x_i$ se lo asocia con un $n_i \in \mathbb{N}$. Para esto debemos seleccionar una función inyectiva $\sigma_Y : 2^Y \rightarrow \mathbb{N}$ que nos permita mapear subconjuntos de Y a números naturales.
+        
+        Debido a que trabajar directamente con los $Y_i$ tal como vienen dados en el dataset resulta inpractico en terminos de complejidad y generalidad, lo que hacemos es elegir aleatoriamente $n$ subconjuntos $Y^{k} (l) \in Y^{k}$ con $1\leq l\leq n \leq \binom{q}{k}$ y $q = |Y|$, donde $Y^{k}$ es el conjunto de subconjuntos de tamaño $k$ de $Y$. Luego a partir de esta selección generamos $n$ conjuntos de entrenamiento distintos asociados cada uno a un $Y^{k} (l)$, y utilizamos a estos últimos como base para generar un ensamble de $n$ componentes. Cada uno de estos nuevos conjuntos de entrenamiento se los define formalmente como:\\
+        
+        ${{D^\dagger}_{Y^{k} (l)}} = \{ (x_i,\sigma_{Y^{k} (l)} (Y_i \cap Y^{k} (l))) | 1\leq i\leq m \}$\\
+        
+        Donde entonces el nuevo conjunto de clases asociado a cada ${D^\dagger}_{Y^{k} (l)}$ será $\Gamma ({D^\dagger}_{Y^{k} (l)}) = \{ \sigma_{Y^{k} (l)} (Y_i \cap Y^{k} (l)) | 1\leq i\leq m \}$
+        Además a cada componente del ensamble se le corresponde un clasificador multi-clase simple ${g^\dagger}_{Y^{k} (l)} (.)$, el cual es entrenado solo en base a su respectivo ${D^\dagger}_{Y^{k} (l)}$. 
+        
+        Con este ensamble entonces para clasificar alguna nueva instancia $x$ calculamos el correspondiente conjunto de etiquetas Y como:\\
+        
+        $Y = \{y_j$ $|$ $(\mu(x, y_j) / \tau(x, y_j)) > 0,5$ , $1\leq j\leq q \}$\\
+        
+        Donde $\mu(x, y_j) = \sum_{r=1}^{n}[[ y_j \in \sigma^{-1}_{Y^{k} (l)} ({g^\dagger}_{Y^{k} (l)} (x)) ]]$ con $1\leq j\leq q$, representa la cantidad de votos que el ensamble le da a $y_j$ en favor a si esta etiqueta deberia pertenecer o no al conjunto Y. Mientras que $\tau(x, y_j) = \sum_{r=1}^{n}[[ y_j \in Y^{k}_{l_r} ]]$ con $1\leq j\leq q$, representa la cantidad maxima de estos votos que se le podría llegar a asignar a $y_j$. Con estas dos metricas presentes observemos que el conjunto Y asociado a $x$ se entiende como todas aquellas eiquetas $y_j$ cuya valoración en el ensamble (con relación a $x$) es major a la mitad de la valoración maxima que se le podría llegar a dar.
+        
+    \section{M\'etodos de Adaptaci\'on de algoritmos}
+    
+        Este enfoque a diferencia del anterior consiste en el estudio de metodos que logren adaptar algoritmos ya conocidos para que puedan trabajar directamente con datasets multi-label sin necesidad de tener que transformarlos.
+    
+        \subsubsection{Multi-Label k-Nearest Neighbor (ML-kNN)}
+        La idea basica de este algoritmo es adaptar la tecnica de k vecinos mas cercanos para lidear con el problema de multi-label, utilizando para ello la regla de \textit{maximun a posteriori} (MAP) para realizar predicciones con la información de las etiquetas que poseen sus vecinos. 
+        
+        %Para instancias no vistas, se utilizara la distancia euclediana para la similitud entre los casos. \\
+        Sea $C_j$ el numero de los vecinos de $x$ con la etiqueta $y_j$, y sea $H_j$ el evento en el que $x$ tiene la etiqueta $y_j$, entonces $P(H_j |C_j)$ representa la probabilidad a posteriori de que $H_j$ mantenga la condición de que $x$ contiene $C_j$ vecinos con la etiqueta $y_j$. Analogamente $P(\neg H_j |C_j)$ representa la probabilidad a posteriori de que $H_j$ no mantenga esa condicion. Con estas estimaciones de acuerdo a la regla MAP el conjunto predicho para alguna instancia aún no vista $x$ queda determinado como $Y = \{y_j$ $|$  $P(H_j |C_j) / P(\neg H_j |C_j) > 1$, $1\leq j \leq q\}$, recordar que $C_j$ se define en función de la instancia $x$.
+        
+        Para calcular el cociente expresado en la definición de $Y$, se lo reduce por medio del teorema de Bayes a una forma que depende solo de $P(H_j)$, $P(\neg H_j)$, $P(C_j |H_j)$, y $P(\neg C_j |H_j))$, las cuales luego son  estimadas por medio de estrategias de \textit{frecuency counting}.
+        
+        %Luego $P(H_j)$ y $P(\neg H_j)$ representan la probabilidad previa de que $H_j$ mantenga o no. Mas aun, P($C_j |H_j$) y P($C_j | \neg H_j$) representan la probabilidad de que $x$ contenga exactamente $C_j$ vecinos con la etiqueta $y_j$.\\
+        %MLKNN cumple con la tarea previamente contada, mediante la estrategia de conteo de frecuencia. Primero la probabilidad anterior es estimada contando el numero de los ejemplos de entrenamiento asociados a cada etiqueta. Segundo, el proceso de estimacion para la probabilidad, esta involucrada. para la clase j de la etiqueta $y_j$, ML-KNN mantiene 2 arreglos de frecuencia $x_j$ y $x_j^.$ y cada uno contiene k+1 elementos. \\
+        %En un primer approach, la relevancia que tiene cada etiqueta por separado. ML-KNN hereda los meritos que posee el aprendisaje lazy y el rasonamiento bayesiano.\\
+        %a) el limite de decision se puede ajustar de forma adaptativa.\\
+        %b) el desequilibrio de clase, se puede mitigar en base a las probabilidades estimadas.
+        
+        \subsubsection{Multi-Label Decision Tree (ML-TD)}
+        \newcommand{\Tau}{\mathrm{T}}
+            La idea de este algoritmo es adaptar la tecnica del \textit{arbol de decision} a multi-labeling. Donde la principal componente de la tecnica sera el uso de entropia multi-label (MLEnt). Para simplificar las cosas asumiremos independencia entre los labels y defniremos $\Tau$ como un dataset multi-label con \textit{n} samples definido con la misma forma que $D$ previamente.
+            
+            Primero definimos la entropia multilabel como:
+            
+            \begin{center}
+                MLEnt($\Tau$) = $\sum_{i=1}^{q} -p_j log_2 p_j - (1 - p_j) log_2 (1 - p_j).$ 
+            \end{center}
+            
+            \begin{center}
+                Donde: $p_j = \frac {\sum_{i=1}^{n} \mid \mid y_j \in Y_i \mid \mid} {n}$
+            \end{center}
+            
+            Aqui $p_j$ representa la fraccion de muestras de $\Tau$ con label $y_j$,
+            
+            Ahora simplemente redefinimos la ganancia de informacion con la que armaremos el arbol de decision. La ganancia de inormacion dada por dividir $\Tau$ a lo largo del l-esimo feature separando por el valor $\theta$ es:
+            
+            \begin{center}
+                $IG(\Tau, l, \theta) = MLEnt(\Tau)$ $-$ $\sum_{p \in {-, +}} \frac{\mid \Tau^p \mid}{\mid \Tau \mid} * MLEnt(\Tau^p)$
+            \end{center}
+            %Donde:
+            \begin{center}
+                $\Tau^- = {(x_i, Y_i \mid x_{il} \leq \theta, 1 \leq i \leq n)}$ \\
+                $\Tau^+ = {(x_i, Y_i \mid x_{il} > \theta, 1 \leq i \leq n)}$
+            \end{center}
+        
+            La idea es, empezando por $\Tau$ = D, partir el dataset en $\Tau^-$ y $\Tau^+$ segun los valores del l-esimo feature mayor (o menor) que $\theta$. (Esto es, armar el nodo del arbol de decision). Esto se repite recursivamente con cada particion hasta que se cumpla algun criterio \textit{C}.
+            
+            % Solo nos queda definir como funciona la entropia multi-label. Para simplificar la cantidad de cuentas, 
+            
+            Finalmente para una nueva instancia $x$, se la da como input al arbol de decision entrenado viajando por el hasta encontrar un nodo hoja relacionado con un numero de samples $\Tau \subseteq D$. Luego, el conjunto de labels predicho corresponde a $Y = \{y_j \mid p_j > 0.5$ , $1 \leq j \leq q\}$
+            Es decir, si en un nodo hoja la mayoria de los samples de entrenamiento que caen en ella son de tipo $y_j$, cualquier instancia de test que caiga en esa hoja tendra $y_j$ como label relevante.
+            
+        \subsection{Conclusiones}
+            %En general pudimos observar que estas técnicas de clasificaci\'on muestran ideas muy similares a las vistas en los modelos cl\'asicos con alg\'unos cambios menores en la mayoría de los casos. 
+            %Esto da la idea de que tan amplio es el espectro de cosas que a\'un se pueden investigar,
+            En general pudimos observar como un cambio aparentemente menor con respecto a las hipotesis de lo problemas que veniamos viendo en la materia puede impactar significativamente, dando lugar a la necesidad de hallar o adaptar notablemente las metricas y algoritmos utilizados para poder resolver este nuevo problema. Esto nos da una idea de que tan amplio es el espectro de cosas que a\'un se pueden investigar.
+            
+            %En general podemos observar que las técnicas de este tipo realizan una suerte de votación entre etiquetas individuales posibles para un elemento nuevo, y en base a eso infieren el conjunto de etiquetas. Dado que lo que se quiere es transformar el dataset de alguna manera para que los algoritmos conocidos puedas usarlo, en general la mayoria de las t\'ecnicas sufren del problema de que la cantidad de posibles conjuntos a predecir crece exponencialmente, pero algunas logran escapar de esta situacion asumiendo algunas propiedades sobre los datos. 
+        
+        
+\end{document}
